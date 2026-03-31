@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Customer Reviews</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #fff;
+      color: #555;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    #status {
+      font-size: 14px;
+      max-width: 360px;
+    }
+  </style>
+</head>
+<body>
+  <p id="status">Loading Google Customer Reviews…</p>
+
+  <!--
+    Google Customer Reviews Survey Opt-In
+    See: https://support.google.com/merchants/answer/14629205
+
+    platform.js automatically calls window.renderOptIn() when it finishes
+    loading. We define renderOptIn() synchronously (below) so it is always
+    present by the time platform.js needs it.
+  -->
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
+
+  <script>
+    // ── Read URL parameters ──────────────────────────────────────────────────
+    var params = new URLSearchParams(window.location.search);
+
+    var merchantId            = parseInt(params.get("merchant_id") || "0", 10);
+    var orderId               = params.get("order_id")              || "";
+    var email                 = params.get("email")                 || "";
+    var deliveryCountry       = params.get("delivery_country")      || "US";
+    var estimatedDeliveryDate = params.get("estimated_delivery_date") || "";
+    var optInStyle            = params.get("opt_in_style")          || "CENTER_DIALOG";
+
+    var statusEl = document.getElementById("status");
+
+    // ── Validate required parameters ────────────────────────────────────────
+    // Google rejects the opt-in call if merchant_id is 0 or email is empty.
+    // Show a graceful message instead of a blank or broken page.
+    if (!merchantId || !orderId || !email) {
+      statusEl.textContent = "Nothing to show. You can close this tab.";
+    }
+
+    // ── Render the opt-in dialog once the GAPI is ready ─────────────────────
+    window.renderOptIn = function () {
+      window.gapi.load("surveyoptin", function () {
+        window.gapi.surveyoptin.render({
+          merchant_id:              merchantId,
+          order_id:                 orderId,
+          email:                    email,
+          delivery_country:         deliveryCountry,
+          estimated_delivery_date:  estimatedDeliveryDate,
+          opt_in_style:             optInStyle
+        });
+
+        // Hide the loading text; Google's dialog is now in control.
+        statusEl.textContent = "";
+
+        // Auto-close this tab after 60 seconds as a safety net.
+        // Browsers allow window.close() when the tab was opened via a
+        // user-initiated click on a <a target="_blank"> link (which is
+        // what Shopify's Link[external] renders).
+        setTimeout(function () {
+          window.close();
+        }, 60000);
+      });
+    };
+  </script>
+</body>
+</html>
