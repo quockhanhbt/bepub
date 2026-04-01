@@ -51,27 +51,47 @@
 
     var statusEl = document.getElementById("status");
 
+    // ── Debug: log all parsed parameters ────────────────────────────────────
+    console.log("[GCR] Raw search string:", window.location.search);
+    console.log("[GCR] Parsed parameters:", {
+      merchant_id:              merchantId,
+      order_id:                 orderId,
+      email:                    email,
+      delivery_country:         deliveryCountry,
+      estimated_delivery_date:  estimatedDeliveryDate,
+      opt_in_style:             optInStyle
+    });
+
     // ── Validate required parameters ────────────────────────────────────────
     // Google rejects the opt-in call if merchant_id is 0 or email is empty.
     // Show a graceful message instead of a blank or broken page.
     if (!merchantId || !orderId || !email) {
+      console.warn("[GCR] Validation failed — missing required params:", {
+        merchantId_ok: !!merchantId,
+        orderId_ok:    !!orderId,
+        email_ok:      !!email
+      });
       statusEl.textContent = "Nothing to show. You can close this tab.";
     }
 
     // ── Render the opt-in dialog once the GAPI is ready ─────────────────────
     window.renderOptIn = function () {
+      console.log("[GCR] renderOptIn() called — gapi loaded, starting surveyoptin.render");
       window.gapi.load("surveyoptin", function () {
-        window.gapi.surveyoptin.render({
+        var renderParams = {
           merchant_id:              merchantId,
           order_id:                 orderId,
           email:                    email,
           delivery_country:         deliveryCountry,
           estimated_delivery_date:  estimatedDeliveryDate,
           opt_in_style:             optInStyle
-        });
+        };
+        console.log("[GCR] Calling gapi.surveyoptin.render with:", renderParams);
+        window.gapi.surveyoptin.render(renderParams);
 
         // Hide the loading text; Google's dialog is now in control.
         statusEl.textContent = "";
+        console.log("[GCR] surveyoptin.render called successfully");
 
         // Auto-close this tab after 60 seconds as a safety net.
         // Browsers allow window.close() when the tab was opened via a
